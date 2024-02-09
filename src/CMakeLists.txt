@@ -62,8 +62,9 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
             ${CMAKE_SOURCE_DIR}/LICENSE-2.0.txt
             js/package.json
             js/index.d.ts
+            js/index.d.cts
             js/LICENSE
-            js/README.md
+            ${CMAKE_SOURCE_DIR}/README.md
             ${CMAKE_CURRENT_BINARY_DIR}/index.cjs
             ${CMAKE_CURRENT_BINARY_DIR}/index.mjs
         DESTINATION pkg

@@ -30,7 +30,7 @@ jobs:
         uses: threeal/cmake-action@v1.3.0
         with:
           c-compiler: emcc
-          options: CMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+          options: CMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake CMAKE_BUILD_TYPE=Release
       - name: Build Project
         run: cmake --build build
       - name: Install Project
