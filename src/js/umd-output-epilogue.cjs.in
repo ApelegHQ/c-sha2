@@ -1,0 +1,11 @@
+module.exports=DEFAULT_EXPORT;
+});}).call(
+	typeof globalThis === "object"
+	? globalThis
+	: typeof self === "object"
+	? self
+	: typeof global === "object"
+	? global
+	: this,
+	"sha2"
+);

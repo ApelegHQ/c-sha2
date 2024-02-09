@@ -1,0 +1,184 @@
+/** @const */
+const STATE_BASE_ADDR = 64;
+/** @const */
+const RESULT_BASE_ADDR = 32;
+/** @const */
+const HASH_SIZE = 32;
+/* 8 KiB of stack */
+/** @const */
+const STACK_BASE_ADDR = 0x2000;
+
+/** @const */
+const $_sha256_digest_ctx_sz = $exportTable._SYM_TINYCRYPTO_sha256_digest_ctx_sz;
+/** @const */
+const $_sha256_digest_init = $exportTable._SYM_TINYCRYPTO_sha256_digest_init;
+/** @const */
+const $_sha256_digest_update = $exportTable._SYM_TINYCRYPTO_sha256_digest_update;
+/** @const */
+const $_sha256_digest_final = $exportTable._SYM_TINYCRYPTO_sha256_digest_final;
+/** @const */
+const $_sha256_digest_ctx_export = $exportTable._SYM_TINYCRYPTO_sha256_digest_ctx_export;
+/** @const */
+const $_sha256_digest_ctx_import = $exportTable._SYM_TINYCRYPTO_sha256_digest_ctx_import;
+/** @const */
+const $memory = $exportTable.memory;
+/** @const */
+const $stackRestore = $exportTable.stackRestore;
+
+const sha2 = () => {
+	const instance = instantiate({});
+	const stateSize = instance[$_sha256_digest_ctx_sz]();
+	const heap = new Uint8Array(instance[$memory].buffer);
+	const heapSize = heap.byteLength;
+	let initialised = false;
+
+	instance[$stackRestore](STACK_BASE_ADDR)
+
+	/**
+	 * Clears the digest state.
+	 * @function
+	 */
+	const scrub = () => {
+		heap.set(new Uint8Array(stateSize), STATE_BASE_ADDR);
+		heap.set(new Uint8Array(HASH_SIZE), RESULT_BASE_ADDR);
+		initialised = false;
+	};
+
+	/**
+	 * Initialises the state if it is not already initialised.
+	 * @function
+	 */
+	const init = () => {
+		if (!initialised) {
+			const r = instance[$_sha256_digest_init](STATE_BASE_ADDR);
+			if (r !== 0) {
+				throw new Error('[sha256-init] Unexpected error: ' + r);
+			}
+			initialised = true;
+		}
+	};
+
+	/**
+	 * Exports the current digest state.
+	 * @function
+	 * @returns {ArrayBufferLike} The current digest state.
+	 */
+	const exportState = () => {
+		init();
+
+		const r = instance[$_sha256_digest_ctx_export](STATE_BASE_ADDR);
+		if (r !== 0) {
+			throw new Error('[sha256-export] Unexpected error: ' + r);
+		}
+
+		const slice = heap.slice(STATE_BASE_ADDR, STATE_BASE_ADDR + stateSize);
+		scrub();
+
+		return slice.buffer;
+	};
+
+	/**
+	 * Imports the given digest state.
+	 * @function
+	 * @param {AllowSharedBufferSource} state - The state to be imported.
+	 * @throws {Error} If the heap is already initialised or the size of the
+	 * state is incorrect.
+	 */
+	const importState = (state) => {
+		if (initialised) {
+			throw new TypeError('[sha256-import] Digest already initialised');
+		}
+		if (state.byteLength !== stateSize) {
+			throw new TypeError(
+				'[sha256-import] Invalid state size: ' +
+				state.byteLength +
+				' != ' +
+				stateSize
+			);
+		}
+		const octets = ArrayBuffer.isView(state)
+			? new Uint8Array(state.buffer).subarray(
+				state.byteOffset,
+				state.byteOffset + state.byteLength,
+			  )
+			: new Uint8Array(state);
+		heap.set(octets, STATE_BASE_ADDR);
+
+		const r = instance[$_sha256_digest_ctx_import](STATE_BASE_ADDR);
+		if (r !== 0) {
+			throw new Error('[sha256-import] Unexpected error: ' + r);
+		}
+
+		initialised = true;
+	};
+
+	/**
+	 * Updates the digest with the given data.
+	 * @function
+	 * @param {AllowSharedBufferSource} data - The data to be updated.
+	 * @throws {Error} If the update fails.
+	 */
+	const update = (data) => {
+		init();
+
+		let pos = 0;
+		const octets = ArrayBuffer.isView(data)
+			? new Uint8Array(data.buffer).subarray(
+				data.byteOffset,
+				data.byteOffset + data.byteLength,
+			  )
+			: new Uint8Array(data);
+
+		while (pos < octets.byteLength) {
+			const chunk = octets.subarray(pos, pos + heapSize - STACK_BASE_ADDR);
+			heap.set(chunk, STACK_BASE_ADDR);
+			const r = instance[$_sha256_digest_update](
+				STATE_BASE_ADDR,
+				STACK_BASE_ADDR,
+				chunk.byteLength,
+			);
+			if (r !== 0) {
+				throw new Error('[sha256-update] Unexpected error: ' + r);
+			}
+
+			pos += chunk.byteLength;
+		}
+	};
+
+	/**
+	 * Finalises the digest and returns the hash.
+	 * @function
+	 * @returns {ArrayBufferLike} The hash of the heap.
+	 * @throws {Error} If the finalisation fails.
+	 */
+	const finish = () => {
+		init();
+
+		const r = instance[$_sha256_digest_final](
+			STATE_BASE_ADDR,
+			RESULT_BASE_ADDR,
+		);
+		if (r !== 0) {
+			throw new Error('[sha256-final] Unexpected error: ' + r);
+		}
+
+		const slice = heap.slice(
+			RESULT_BASE_ADDR,
+			RESULT_BASE_ADDR + HASH_SIZE,
+		);
+		scrub();
+
+		return slice.buffer;
+	};
+
+	const wrap = (v) => ({ value: v, enumerable: true });
+
+	return Object.create(null, {
+		'scrub': wrap(scrub),
+		'exportState': wrap(exportState),
+		'importState': wrap(importState),
+		'update': wrap(update),
+		'finish': wrap(finish),
+	});
+};
+const DEFAULT_EXPORT = sha2;

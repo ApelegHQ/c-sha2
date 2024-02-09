@@ -1,0 +1,5 @@
+/*
+Equal amount of space for the ESM-syntax export
+export default DEFAULT_EXPORT;
+*/
+self['------']=DEFAULT_EXPORT;

@@ -1,0 +1,29 @@
+{
+  "name": "@exact-realty/sha2",
+  "author": "Exact Realty Limited",
+  "keywords": ["sha256", "sha2", "hash", "digst"],
+  "description": "SHA2 implementation with exportable state",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Exact-Realty/c-sha2.git"
+  },
+  "files": [
+    "LICENSE-2.0.txt",
+    "index.cjs",
+    "index.d.ts",
+    "index.mjs"
+  ],
+  "type": "module",
+  "module": "./index.mjs",
+  "main": "./index.cjs",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    }
+  }
+}

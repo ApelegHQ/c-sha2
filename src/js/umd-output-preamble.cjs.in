@@ -1,0 +1,31 @@
+(function(fallbackPkgName){(function (global, factory) {
+	if (typeof define === "function" && define["amd"]) {
+		define(["require", "exports", "module"], factory);
+	} else {
+		const isCjsMod = (typeof module === "object" && typeof module["exports"] === "object");
+		const req = (typeof require === "function")
+			? require
+			: function(n) {throw new Error("Cannot find module '" + n + "'");};
+		const mod = isCjsMod
+			? module
+			: Object.create(null, {
+				"exports": {
+					["configurable"]: true,
+					["enumerable"]: true,
+					["writable"]: true,
+					["value"]: Object.create(null),
+				},
+			});
+
+		const result = factory(req, mod["exports"], mod);
+
+		if (typeof result !== "undefined") {
+			mod["exports"] = result;
+		}
+
+		if (!isCjsMod) {
+			global[fallbackPkgName] = mod["exports"];
+		}
+	}
+})(this, function (require, exports, module) {
+	"use strict";
